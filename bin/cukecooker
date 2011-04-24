@@ -416,15 +416,15 @@ $(function() {
       text = text.substring(5);
       currentAction = "When ";
     }
-    if (text.match(/^then /i)) {
+    else if (text.match(/^then /i)) {
       text = text.substring(5);
       currentAction = "Then ";
     }
-    if (text.match(/^given /i)) {
+    else if (text.match(/^given /i)) {
       text = text.substring(6);
       currentAction = "Given ";
     }
-    if (text.match(/^and /i)) {
+    else if (text.match(/^and /i)) {
       text = text.substring(4);
       currentAction = "And ";
     }
