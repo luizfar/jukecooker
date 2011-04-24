@@ -18,32 +18,34 @@ def check_dir(dir)
 end
 
 # Get command line directory or default to current
-dir = ARGV[0] || "."
-dir = File.expand_path(dir)
-check_dir dir
+project_dir = File.expand_path(ARGV[0] || ".")
+check_dir(project_dir)
 
 # Asume project name is the name of the given directory.
 # If it's src, go one level up
-name = File.basename dir
+name = File.basename(project_dir)
 if name == 'src'
-  name = File.basename File.dirname(dir)
+  name = File.basename(File.dirname(project_dir))
 end
 
-dir = "#{dir}/features/step_definitions"
-check_dir dir
+stepdef_dir = "#{project_dir}/features/step_definitions"
+check_dir(stepdef_dir)
 
-step_files = Dir["#{dir}/**/*.rb"]
+step_files = Dir["#{stepdef_dir}/**/*.rb"]
 step_files.each do |step_file|
-  lines = File.readlines step_file
-  lines.each do |line|
+  # Read each line in the stepdef file, and look for step definitions
+  File.readlines(step_file).each do |line|
     next unless match = StepRegex.match(line)
 
     regexp = match[1]
     next if regexp.empty?
 
     steps << ",\n" unless steps.empty?
+    # If this step accepts parameters, parse the parameter names
     if match[2]
-      parameters = match[2].strip[1 ... -1].split(',').map!{|x| "'#{x.strip.gsub('_', ' ')}'"}.join(',') if match[2]
+      parameters = match[2].strip[1 ... -1].split(',').map do |param|
+        "'" + param.strip.gsub('_', ' ') + "'"
+      end.join(',')
       steps << "[/^#{regexp}$/, [#{parameters}]]"
     else
       steps << "[/^#{regexp}$/]"
@@ -52,7 +54,7 @@ step_files.each do |step_file|
 end
 
 if steps.empty?
-  puts "Error: no step definitions found in #{dir}/features/step_definitions"
+  puts "Error: no step definitions found in #{stepdef_dir}/features/step_definitions"
   puts "  Be sure to run cukecooker in a directory which contains a features/step_definitions directory"
   puts "  or give cukecooker the path to that directory."
   exit
