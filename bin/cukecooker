@@ -41,7 +41,7 @@ step_files.each do |step_file|
     regexp = match[1]
     next if regexp.empty?
 
-    steps << "," unless steps.empty?
+    steps << ",\n" unless steps.empty?
     if match[2]
       parameters = match[2].strip[1 ... -1].split(',').map!{|x| "'#{x.strip.gsub('_', ' ')}'"}.join(',') if match[2]
       steps << "[/^#{regexp}$/, [#{parameters}]]"
@@ -112,6 +112,14 @@ allLiIndices = [];
 
 // HACK: keyup event if fired twice... why? :'-(
 justBuiltAStep = false;
+
+var delay = (function() {
+  var timer = 0;
+  return function(callback, ms) {
+    clearTimeout (timer);
+    timer = setTimeout(callback, ms);
+  };
+})();
 
 $(function() {
   $steps = $("#steps");
@@ -332,57 +340,10 @@ $(function() {
     return $($stepsLi[idx]);
   }
 
-  // Split original steps and create the steps array
-  for(var i = 0; i < originalSteps.length; i++) {
-    originalStep = originalSteps[i];
-    step = originalStep[0].toString();
-    // Remove /^ and $/
-    s = step.substring(2, step.length - 2);
-    splits = splitRegexp(s);
-    for(var j = 0; j < splits.length; j++) {
-      split = splits[j];
+  // Event handler to match steps when text is entered
+  function matchStep(ev) {
+    globalTimeout = null;
 
-      newStep = {}
-      newStep.regexp = split
-      newStep.params = originalStep.length == 1 ? [] : originalStep[1]
-      newStep.regexpReplaced = processGroups(newStep, function(idx) {
-        return newStep.params[idx];
-      });
-
-      steps.push(newStep);
-
-      allLiIndices.push(allLiIndices.length);
-    }
-  }
-
-  liIndices = allLiIndices;
-
-  // Sort steps according to regexps, alphabetically
-  steps.sort(function(a, b) {
-    x = a.regexp.toLowerCase();
-    y = b.regexp.toLowerCase();
-    return x < y ? -1 : (x > y ? 1 : 0);
-  });
-
-  // Write the steps in the <li>s
-  for(var i = 0; i < steps.length; i++) {
-    step = steps[i];
-    replacement = processGroups(step, function(idx) {
-      return '<span class="param">' + step.params[idx] + '</span>';
-    });
-    $steps.append("<li>" + replacement + "</li>");
-  }
-
-  $stepsLi = $steps.find("li");
-
-  // Highlight the first selected step
-  stepLi(0).addClass("selected");
-
-  // Focus the text input to write the match
-  $stepMatch.focus();
-
-  // When pressing a key in the step match input, filter the steps
-  $stepMatch.keyup(function(ev) {
     if (justBuiltAStep) {
       justBuiltAStep = false;
       return;
@@ -448,6 +409,62 @@ $(function() {
         $stepLi.hide();
       }
     }
+  }
+
+  // Split original steps and create the steps array
+  for(var i = 0; i < originalSteps.length; i++) {
+    originalStep = originalSteps[i];
+    step = originalStep[0].toString();
+    // Remove /^ and $/
+    s = step.substring(2, step.length - 2);
+    splits = splitRegexp(s);
+    for(var j = 0; j < splits.length; j++) {
+      split = splits[j];
+
+      newStep = {}
+      newStep.regexp = split
+      newStep.params = originalStep.length == 1 ? [] : originalStep[1]
+      newStep.regexpReplaced = processGroups(newStep, function(idx) {
+        return newStep.params[idx];
+      });
+
+      steps.push(newStep);
+
+      allLiIndices.push(allLiIndices.length);
+    }
+  }
+
+  liIndices = allLiIndices;
+
+  // Sort steps according to regexps, alphabetically
+  steps.sort(function(a, b) {
+    x = a.regexp.toLowerCase();
+    y = b.regexp.toLowerCase();
+    return x < y ? -1 : (x > y ? 1 : 0);
+  });
+
+  // Write the steps in the <li>s
+  for(var i = 0; i < steps.length; i++) {
+    step = steps[i];
+    replacement = processGroups(step, function(idx) {
+      return '<span class="param">' + step.params[idx] + '</span>';
+    });
+    $steps.append("<li>" + replacement + "</li>");
+  }
+
+  $stepsLi = $steps.find("li");
+
+  // Highlight the first selected step
+  stepLi(0).addClass("selected");
+
+  // Focus the text input to write the match
+  $stepMatch.focus();
+
+  // When pressing a key in the step match input, filter the steps
+  $stepMatch.keyup(function(ev) {
+    delay(function() {
+      matchStep(ev);
+    }, 1000 );
   });
 
   // When pressing up or down on the stepMatch input,
