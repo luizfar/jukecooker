@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 StepRegex = %r(\s*(?:When|Given|Then).*/\^(.+)\$\/\s*do(\s*\|.*\|)?)
 
 steps = ""
