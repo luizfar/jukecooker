@@ -133,14 +133,15 @@ $(function() {
   function processGroups(step, callback) {
     paramIdx = 0;
     regexp = step.regexp;
-    while(true) {
-      m = regexp.match(/\(.+?\)/);
-      if (!m) break;
-
-      m = m[0];
-      idx = regexp.indexOf(m);
-      regexp = regexp.substring(0, idx) + callback(paramIdx) + regexp.substring(idx + m.length);
-      paramIdx++;
+    var matches = true;
+    while (matches) {
+      matches = regexp.match(/\$.+?\$/);
+      if (matches) {
+        var m = matches[0];
+        idx = regexp.indexOf(m);
+        regexp = regexp.substring(0, idx) + callback(paramIdx) + regexp.substring(idx + m.length);
+        paramIdx++;
+      }
     }
     return regexp;
   }
@@ -339,7 +340,6 @@ $(function() {
   for(var i = 0; i < originalSteps.length; i++) {
     var originalStep = originalSteps[i];
     var step = originalStep[0].toString();
-    // Remove /^ and $/
     var splits = splitRegexp(step);
     for(var j = 0; j < splits.length; j++) {
       var split = splits[j];
@@ -361,8 +361,8 @@ $(function() {
 
   // Sort steps according to regexps, alphabetically
   steps.sort(function(a, b) {
-    x = a.regexp.toLowerCase();
-    y = b.regexp.toLowerCase();
+    var x = a.regexp.toLowerCase();
+    var y = b.regexp.toLowerCase();
     return x < y ? -1 : (x > y ? 1 : 0);
   });
 

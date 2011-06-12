@@ -6,8 +6,11 @@ import org.jbehave.core.steps.CandidateSteps;
 import org.jbehave.core.steps.StepCandidate;
 
 import java.io.*;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class StepsFinder {
 
@@ -19,7 +22,6 @@ public class StepsFinder {
 		for (CandidateSteps candidateSteps : stepsList) {
 			for (StepCandidate candidate : candidateSteps.listCandidates()) {
                 String stepText = candidate.toString().replaceFirst("GIVEN ", "").replaceFirst("WHEN ", "").replaceFirst("THEN ", "");
-                System.out.println(stepText);
                 steps.add(stepText);
 			}
 		}
@@ -29,12 +31,47 @@ public class StepsFinder {
 
 	private String format(List<String> stepList) {
 		StringBuilder builder = new StringBuilder();
-		for (String step : stepList) {
+        String parametersRegex = "\\$[a-zA-Z]([a-zA-Z]|\\d|_|-)*";
+        Pattern pattern = Pattern.compile(parametersRegex);
+
+        boolean first = true;
+        for (String step : stepList) {
+            if (!first) {
+                builder.append(",\n");
+            }
             builder.append("[\"");
-            builder.append(step);
-            builder.append("\"],\n");
+
+            String stepText = step;
+            StringBuilder parameterList = new StringBuilder();
+            Matcher m = pattern.matcher(step);
+
+            if (m.find()) {
+                parameterList.append(", [");
+                boolean firstParameter = true;
+                do {
+                    String parameter = m.group();
+                    String parameterName = parameter.replace("$", "");
+                    stepText = stepText.replace(parameter, "$" + parameterName + "$");
+                    if (!firstParameter) {
+                        parameterList.append(", ");
+                    }
+                    parameterList.append("\"");
+                    parameterList.append(parameterName);
+                    parameterList.append("\"");
+                    firstParameter = false;
+                } while (m.find());
+                parameterList.append("]");
+            }
+
+            builder.append(stepText);
+            builder.append("\"");
+            builder.append(parameterList.toString());
+
+            builder.append("]");
+            first = false;
         }
 
+        System.out.println(builder.toString());
 		return builder.toString();
 	}
 

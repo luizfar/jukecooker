@@ -11,7 +11,7 @@ public class MySteps {
 
 	}
 
-    @Given("My name is $name")
+    @Given("My surname is $name and I have a 'cat'")
     public void givenMyNameIs(String name) {
 
     }
