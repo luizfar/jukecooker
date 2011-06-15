@@ -53,13 +53,13 @@ var delay = (function() {
 })();
 
 $(function() {
-  $steps = $("#steps");
-  $stepBuilder = $("#stepBuilder");
-  $scenario = $("#scenario");
-  $stepMatch = $("#stepMatch");
-  $stepMatch_static = $("#stepMatch_static");
-  $explanationStep = $("#explanationStep");
-  $explanationStepBuilder = $("#explanationStepBuilder");
+  var $steps = $("#steps");
+  var $stepBuilder = $("#stepBuilder");
+  var $scenario = $("#scenario");
+  var $stepMatch = $("#stepMatch");
+  var $stepMatch_static = $("#stepMatch_static");
+  var $explanationStep = $("#explanationStep");
+  var $explanationStepBuilder = $("#explanationStepBuilder");
 
   // Push all elements into array
   function pushAll(array, elements) {
@@ -136,15 +136,15 @@ $(function() {
   // receives the index of the matched group and must return a replacement
   // for it.
   function processGroups(step, callback) {
-    paramIdx = 0;
-    regexp = step.regexp;
+    var paramIdx = 0;
+    var regexp = step.regexp;
     var matches = true;
     while (matches) {
       matches = regexp.match(/\$.+?\$/);
       if (matches) {
         var m = matches[0];
-        idx = regexp.indexOf(m);
-        regexp = regexp.substring(0, idx) + callback(paramIdx) + regexp.substring(idx + m.length);
+        var idx = regexp.indexOf(m);
+        var regexp = regexp.substring(0, idx) + callback(paramIdx) + regexp.substring(idx + m.length);
         paramIdx++;
       }
     }
@@ -153,33 +153,57 @@ $(function() {
 
   // Transforms 'foo "(...)" bar' into 'foo (...) bar'
   function removeQuotedGroups(step) {
-    regexp = step.regexp;
+    var regexp = step.regexp;
     while(true) {
-      m = regexp.match(/"\(.+?\)"/);
+      var m = regexp.match(/"\(.+?\)"/);
       if (!m) break;
 
       m = m[0];
-      idx = regexp.indexOf(m);
+      var idx = regexp.indexOf(m);
       regexp = regexp.substring(0, idx) + m.substring(1, m.length -1) + regexp.substring(idx + m.length);
     }
     return regexp;
   }
 
+  function updateCurrentAction() {
+      var text = buildingStep.regexpReplaced;
+
+      if (text.match(/^when/i)) {
+        currentAction = "When ";
+      }
+      else if (text.match(/^then/i)) {
+        currentAction = "Then ";
+      }
+      else if (text.match(/^given/i)) {
+        currentAction = "Given ";
+      }
+      else if (text.match(/^and/i)) {
+        currentAction = "And ";
+      }
+
+      // Set the current action and see if it changed from the last one
+      lastActionChanged = lastAction != currentAction;
+      lastAction = currentAction;
+  }
+
   // Appends the step just built to the scenario div.
   function appendToScenario() {
+      updateCurrentAction();
+
       var replacement = processGroups(buildingStep, function(idx) {
         return '<span class="param">' + $("#p" + idx).val() + '</span>';
       });
       replacement = replacement.substring(currentAction.length);
-      replacement = "<strong>" + currentAction + "</strong>" + replacement;
-      if (currentAction == "And ") {
+      var actionLabel = lastActionChanged ? currentAction : "And ";
+      replacement = "<strong>" + actionLabel + "</strong>" + replacement;
+      if (!lastActionChanged) {
         replacement = "&nbsp;&nbsp;" + replacement;
       } else if (lastActionChanged && !firstStepInScenario) {
         replacement = "<br/>" + replacement;
       }
       var regexp = buildingStep.regexp;
       if (regexp[regexp.length - 1] == ':') {
-        if (currentAction == "And ") {
+        if (!lastActionChanged) {
           replacement += '<br/>&nbsp;&nbsp;"""<br/>&nbsp;&nbsp;TODO: text or table goes here&nbsp;&nbsp;<br/>&nbsp;&nbsp;"""';
         } else {
           replacement += '<br/>"""<br/>TODO: text or table goes here<br/>"""';
@@ -193,15 +217,6 @@ $(function() {
   // Prepares the page for building steps (input texts for parameters)
   function prepareBuildStep() {
     buildingStep = steps[currentLiIndex()];
-
-    // Set the current action and see if it changed from the last one
-    if (lastAction == currentAction && currentAction != "And ") {
-      currentAction = "And ";
-      lastActionChanged = false;
-    } else {
-      lastActionChanged = true;
-    }
-    lastAction = currentAction;
 
     var groupsCount = 0;
     processGroups(buildingStep, function(idx) {
@@ -220,11 +235,11 @@ $(function() {
       $steps.hide();
       $stepBuilder.show();
 
-      regexpWithoutQuotes = removeQuotedGroups(buildingStep);
-      originalRegexp = buildingStep.regexp;
+      var regexpWithoutQuotes = removeQuotedGroups(buildingStep);
+      var originalRegexp = buildingStep.regexp;
       buildingStep.regexp = regexpWithoutQuotes;
 
-      html = '<table><tr><td><nobr><strong>' + currentAction + "</strong>";
+      var html = '<table><tr><td><nobr><strong>' + currentAction + "</strong>";
       html += processGroups(buildingStep, function(idx) {
         return '</nobr></td><td width="100"><input type="text" id="p' + idx + '" class="complete"></td><td><nobr>';
       });
@@ -304,27 +319,16 @@ $(function() {
 
     // See if we the text starts with an action and remove it
     var foundMatch = false;
-    if (text.match(/^w$|^wh$|^whe$|^when/i)) {
-      currentAction = "When ";
-    }
-    else if (text.match(/^t$|^th$|^the$|^then/i)) {
-      currentAction = "Then ";
-    }
-    else if (text.match(/^g$|^gi$|^giv$|^give$|^given/i)) {
-      currentAction = "Given ";
-    }
-    else if (text.match(/^a$|^an$|^and/i)) {
-      currentAction = "And ";
-    }
 
     // Do the filtering
-    text = eval("/^" + text + "/i");
+    text = $.trim(text);
+    text = eval("/" + (text === "" ? "^" : text) + "/i");
     liIndices = [];
 
     selectedStepIndex = -1;
     for(var i = 0; i < steps.length; i++) {
       step = steps[i];
-      $stepLi = stepLi(i);
+      var $stepLi = stepLi(i);
       if (step.regexpReplaced.match(text)) {
         $stepLi.show();
         if (selectedStepIndex == -1) {
@@ -501,7 +505,7 @@ h3 { padding: 0px; margin:0px; }
 <body>
 <div id="container">
   <h3 id="explanationStep">
-  Write a step as you would write it in cucumber (including given, when, then, and) and press enter when you have selected one.
+  Write a step as you would write it in JBehave and press enter when you have selected one.
   </h3>
   <h3 id="explanationStepBuilder" style="display:none">
   Now fill in the fields for the step (press tab or enter to change between fields, or escape to search another step).
