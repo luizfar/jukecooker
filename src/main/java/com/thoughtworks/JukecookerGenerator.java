@@ -27,7 +27,7 @@ public class JukecookerGenerator {
 
 	public static void main(String[] args) throws ClassNotFoundException, IOException, URISyntaxException {
 		if (args.length < 2) {
-			showUsage();
+			showUsageAndExit();
 		}
 
 		List<String> stepsList = new ArrayList<String>();
@@ -36,8 +36,13 @@ public class JukecookerGenerator {
 		} else if (args[0].equalsIgnoreCase("-path")) {
 			stepsList = new StepsFinder().findBySourceFiles(new File(args[1]));
 		} else {
-			showUsage();
+			showUsageAndExit();
 		}
+
+        if (stepsList.isEmpty()) {
+            System.err.println("Could not find any valid steps in the parsed source files.");
+            System.exit(1);
+        }
 
 		String formattedSteps = new StepsFormatter().format(stepsList);
 
@@ -50,7 +55,7 @@ public class JukecookerGenerator {
 		System.out.println("Generated 'jukecooker.html' with " + stepsList.size() + " steps.");
 	}
 
-	private static void showUsage() {
+	private static void showUsageAndExit() {
 		System.err.println("Usage: jukecooker (-class <JBehave configurable embedder class> | -path <path to steps classes folder>");
 		System.exit(1);
 	}
