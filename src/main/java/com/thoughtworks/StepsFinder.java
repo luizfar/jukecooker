@@ -5,11 +5,7 @@ import org.jbehave.core.ConfigurableEmbedder;
 import org.jbehave.core.steps.CandidateSteps;
 import org.jbehave.core.steps.StepCandidate;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -41,8 +37,8 @@ public class StepsFinder {
 	}
 
 	public List<String> findBySourceFiles(File sourceFilesParent) {
-        File[] javaFiles = sourceFilesParent.listFiles(javaFiles());
-        if (javaFiles == null || javaFiles.length == 0) {
+        List<File> javaFiles = listJavaFilesIn(sourceFilesParent);
+        if (javaFiles == null || javaFiles.isEmpty()) {
             throw new NoSourceFilesFoundException();
         }
 
@@ -53,7 +49,18 @@ public class StepsFinder {
         }
 	}
 
-    private List<String> findStepsInFiles(File[] javaFiles) throws IOException {
+    private List<File> listJavaFilesIn(File parentDirectory) {
+        List<File> javaFiles = asList(parentDirectory.listFiles(thatAreJavaSource()));
+        File[] directories = parentDirectory.listFiles(thatAreDirectories());
+        if (directories != null) {
+            for (File directory : directories) {
+                javaFiles.addAll(listJavaFilesIn(directory));
+            }
+        }
+        return javaFiles;
+    }
+
+    private List<String> findStepsInFiles(List<File> javaFiles) throws IOException {
         ArrayList<String> steps = new ArrayList<String>();
         Pattern stepPattern = Pattern.compile("^\\s*@(Given|When|Then|Alias)\\(\"(.*?)\"\\)\\s*$");
         String lastStepType = "";
@@ -82,11 +89,29 @@ public class StepsFinder {
         return steps;
     }
 
-    private FilenameFilter javaFiles() {
+    private List<File> asList(File[] files) {
+        List<File> list = new ArrayList<File>();
+        if (files != null) {
+            for (File file : files) {
+                list.add(file);
+            }
+        }
+        return list;
+    }
+
+    private FilenameFilter thatAreJavaSource() {
 		return new FilenameFilter() {
 			public boolean accept(File dir, String name) {
 				return name.endsWith(".java") || name.endsWith(".groovy");
 			}
 		};
 	}
+
+    private FileFilter thatAreDirectories() {
+        return new FileFilter() {
+            public boolean accept(File file) {
+                return file.isDirectory();
+            }
+        };
+    }
 }
