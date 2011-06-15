@@ -1,26 +1,34 @@
-== Cukecooker
+== Jukecooker
 
-Cukecooker aids you in writing Cucumber scenarios.
+Jukecooker aids you in writing JBehave scenarios.
+It is forked from Ary Borenszweig's Cukecooker, found at https://github.com/asterite/cukecooker
 
 It generates an HTML with your project's step definitions and lets you
 use them to write scenarios in a comfortable way, with autocomplete
 and text inputs for group matches.
 
-You can think of it as a Cucumber IDE.
+You can think of it as a JBehave IDE.
 
 === Usage
 
-In your project root, which should contain a features folder, run this
-in a terminal:
+Jukecooker creates the working HTML file by parsing a set of *.java or *.groovy files.
+For that just run:
 
-  cukecooker
+  java -jar Jukecooker.jar -path <path to folder containing your step classes *.java or *.groovy files>
 
-Or:
+For instance:
 
-  cukecooker path/to/your/project
+  java -jar Jukecooker.jar -path myproject/src/main/java/com/mypackage/mysteps
+
 
 If everything went well you should see
 
-  Done! Now open cukecooker-project.html in a browser.
+  Done! Generated 'jukecooker.html' with <number of steps found> steps.
 
 Go ahead, try it!
+
+=== Building it
+
+To build it just run 'mvn assembly:assembly'
+
+Enjoy!

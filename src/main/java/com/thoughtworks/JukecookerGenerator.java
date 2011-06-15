@@ -52,7 +52,7 @@ public class JukecookerGenerator {
 		writer.write(html);
 		writer.close();
 
-		System.out.println("Generated 'jukecooker.html' with " + stepsList.size() + " steps.");
+		System.out.println("Done! Generated 'jukecooker.html' with " + stepsList.size() + " steps.");
 	}
 
 	private static void showUsageAndExit() {
